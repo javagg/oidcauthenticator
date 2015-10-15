@@ -55,3 +55,8 @@ docs/_build/
 
 # PyBuilder
 target/
+
+.idea
+example/jupyterhub_cookie_secret
+example/jupyterhub.sqlite
+
