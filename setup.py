@@ -3,6 +3,7 @@
 
 from distutils.core import setup
 import sys
+import os
 
 pjoin = os.path.join
 here = os.path.abspath(os.path.dirname(__file__))
