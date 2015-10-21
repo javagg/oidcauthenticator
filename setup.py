@@ -2,6 +2,7 @@
 # coding: utf-8
 
 from distutils.core import setup
+import sys
 
 pjoin = os.path.join
 here = os.path.abspath(os.path.dirname(__file__))
