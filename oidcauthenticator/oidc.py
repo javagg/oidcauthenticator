@@ -8,6 +8,8 @@ from oic.oic import Client
 from oic.oauth2 import rndstr
 from oic.oic.message import AuthorizationResponse
 from oic.utils.authn.client import CLIENT_AUTHN_METHOD
+from traitlets import Unicode
+import os
 
 class OidcLoginHandler(BaseHandler):
     def get(self):
@@ -20,7 +22,7 @@ class OidcLoginHandler(BaseHandler):
         #issuer_url = provider_url
         self.log.info('issuer_url: %r', issuer_url)
         provider_info = oclient.provider_config(issuer_url)
-        self.log.info('provider_info: %s', provider_info)
+
         response_types = ["code", "id_token", "token"]
         response_types = ["code"]
 
@@ -33,8 +35,14 @@ class OidcLoginHandler(BaseHandler):
             "redirect_uris": [redirect_uri],
             "response_types": response_types
         }
-        registration_response = oclient.register(provider_info["registration_endpoint"], **args)
-        print("registration_response: %s" % registration_response)
+        registration_endpoint = provider_info.to_dict().get("registration_endpoint", None)
+        if registration_endpoint is not None:
+            registration_response = oclient.register(provider_info["registration_endpoint"], **args)
+            print("registration_response: %s" % registration_response)
+        else:
+            oclient.client_id = self.authenticator.client_id
+            oclient.client_secret = self.authenticator.client_secret
+
         state = rndstr()
         nonce = rndstr()
         self.set_cookie("oidc_state", state)
@@ -48,7 +56,6 @@ class OidcLoginHandler(BaseHandler):
         }
 
         request_args.update(behaviour)
-
         auth_req = oclient.construct_AuthorizationRequest(request_args=request_args)
         login_url = auth_req.request(oclient.authorization_endpoint)
         print("login_url:{}".format(login_url))
@@ -75,6 +82,16 @@ class OidcAuthenticator(Authenticator):
     oidc_provider_url = 'override in subclass'
     oidc_callback_url = 'override in subclass'
 
+    client_id_env = 'OIDC_CLIENT_ID'
+    client_id = Unicode(config=True)
+    def _client_id_default(self):
+        return os.getenv(self.client_id_env, '')
+    
+    client_secret_env = 'OIDC_CLIENT_SECRET'
+    client_secret = Unicode(config=True)
+    def _client_secret_default(self):
+        return os.getenv(self.client_secret_env, '')
+        
     login_handler = OidcLoginHandler
     callback_handler = OidcCallbackHandler
 
